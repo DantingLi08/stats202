@@ -1,0 +1,62 @@
+---
+title: "Problem 6"
+output: html_document
+---
+
+#### PART A ####
+
+```{r}
+training_target <- read.csv('training_target.csv')
+n_patients = nrow(training_target)
+cat("There are", n_patients, "patients in 'training_target.csv'.")
+
+summary(training_target)
+```
+
+#### PART B ####
+
+```{r}
+training_features <- read.csv('training_features.csv')
+n_features = ncol(training_features)
+cat("There are", n_features, "feature columns in 'training_features.csv'.")
+
+num.nas <- function(x) sum(is.na(x))
+num.training_features.nas <- apply(training_features, 2, num.nas)
+hist(num.training_features.nas)
+```
+
+#### PART C ####
+
+```{r}
+feature.name <- "weight.slope"
+dummy.name <- paste0("is.na.",feature.name)
+is.na.feature <- is.na(training_features[,feature.name])
+training_features[,dummy.name] <- as.integer(is.na.feature)  # Convert boolean values to binary
+
+training_features[is.na.feature,feature.name] <- median(training_features[,feature.name], na.rm = TRUE)
+
+feature.names <- names(training_features)
+for (feature.name in feature.names[-1]) {  # The [-1] excludes the subject id
+    dummy.name <- paste0("is.na.",feature.name)
+    is.na.feature <- is.na(training_features[,feature.name])
+    training_features[,dummy.name] <- as.integer(is.na.feature)  # Convert boolean values to binary
+}
+```
+
+#### PART D ####
+```{r}
+validation_target   <- read.csv('validation_target.csv')
+validation_features <- read.csv('validation_features.csv')
+
+cat("There are", ncol(validation_target), "validation patients in 'validation_target.csv' and",
+    ncol(validation_features), "validation features in 'validation_features.csv'.")
+
+summary(training_target)
+summary(validation_target)
+```
+
+The patient in the training data with the minimum ALSFRS slope has one of `-4.3`, while the minimum in the validation data is `-3.0`, a huge difference. Also, the maximim for the training set is `1.2` while the maximum for the validation set is just `0.3`. However, the first quartiles, medians, means, and third quartiles are quite similar across the two data sets. In other words, the training data is much more spread out, while the validation data has lower variation.
+
+```{r}
+summary(training_features[,'weight.slope'])
+```

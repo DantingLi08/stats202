@@ -1,0 +1,65 @@
+---
+output: html_document
+---
+
+## Misc
+
+I accidentally did problem 3 from the textbook, so here's a scatter plot:
+
+```{r}
+pts = matrix(
+  c(1, 1, 0, 5, 6, 4, 4, 3, 4, 1, 2, 0),
+  nrow = 6,
+  ncol = 2
+)
+colnames(pts) = c('X coordinates', 'Y coordinates')
+plot(pts)
+```
+
+## Problem 3
+
+### Part A
+
+```{r}
+arrests=USArrests
+plot(USArrests)
+hc <- hclust(dist(USArrests), "complete")
+plot(hc, hang = -1, main = 'Complete linkage + Euclidian distance dendogram')
+```
+
+### Part B
+
+*Note:* I relied heavily on [this website](https://www.biostars.org/p/86563/) to solve this problem.
+
+```{r}
+# cutree returns a vector of cluster membership in the order of the original data rows examine it
+clusters <- cutree(hc, k=10)
+
+## to grab a cluster:
+# cluster1 <- USArrests[clusters == 1,]
+
+# to add the cluster ID to your data:
+all_clusters <- cbind(USArrests, clusterID=clusters)
+
+# examine the data with cluster ids attached, ordered by the 'clusterID' column
+all_clusters[order(all_clusters[['clusterID']]), ]
+```
+
+### Part C
+
+```{r}
+scaled_arrests = scale(USArrests)
+scaled_arrests
+hc <- hclust(dist(scaled_arrests), "complete")
+plot(hc, hang = -1, main = 'Complete linkage + Euclidian distance dendogram, scaled')
+```
+
+### Part D
+
+A major effect of scaling the variables is that the cluster sizes are more evenly sized. I prefer it with more evenly distributed clusters, because with uneven group sizes you get some really large groups that can contain more variance than they suggest. For instance, before scaling the variables the sheer magnitude (rather than per-capita) of crime committed in each state likely played a role in determining the clusters. As a result, the groups tended to indicate the approximate population of the states. For instance, cluster 6 in part b tended to contain states with a middle- to low-level population, the main outliers being PA and OH. State population isn't what we're trying to measure here, so it confounds our groups. Rather, we'd rather cluster states by their crime rates relative to each other.
+
+```{r}
+clusters <- cutree(hc, k=10)
+all_clusters <- cbind(USArrests, clusterID=clusters)
+all_clusters[order(all_clusters[['clusterID']]), ]
+```

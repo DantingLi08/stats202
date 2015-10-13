@@ -1,0 +1,91 @@
+---
+output: html_document
+---
+
+## Problem 6
+
+```{r}
+set.seed(1)
+x1 = runif(100)
+x2 = (0.5 * x1) + rnorm(100)/10
+
+# Create a linear model in which y is a function of x1 and x2.
+y = 2 + (2 * x1) + (0.3 * x2) + rnorm(100)
+```
+
+### Part A
+
+The form of the linear model is
+
+$$\begin{align*}
+y &= \beta_0 + \beta_1x_1 + \beta_2x_2 + \epsilon\\
+  &= 2 + 2 \cdot x_1 + 0.3 \cdot x_2 + rnorm(100)
+\end{align*}\\
+\\
+\boxed{\beta_0 = 2, \beta_1 = 2, \beta_2 = 0.3, \epsilon = rnorm(100)} $$
+
+
+### Part B
+
+```{r}
+cor(x1, x2)
+plot(x1, x2)
+```
+
+### Part C
+
+```{r}
+fit <- lm(y ~ x1 + x2)
+summary(fit)
+```
+
+The estimated coefficients are $\beta_0 = 2.1305$, $\beta_1 = 1.4396$, and $\beta_2 = 1.0097$, which are at least in the ballpark of the true coefficients (`2, 2, 0.3`). $\beta_2$ is smaller than both $\beta_0$ and $\beta_1$ in both the true and estimated coefficients.
+
+We can reject the null hypothesis $H_0 : β_1 = 0$, because the `p = 0.0487 < 0.05`. However, we cannot reject $H_0 : β_2 = 0$, because `p = 0.3754 > 0.05`.
+
+### Part D
+
+```{r}
+fit <- lm(y ~ x1)
+summary(fit)
+```
+
+We can reject the null hypothesis $H_0 : β_1 = 0$, because the `p = 2.661e-06 < 0.05`. When we throw out $x_2$, we get a much more impressive `p` value than when we included both $x_1$ and $x_2$ in the linear regression.
+
+### Part E
+
+```{r}
+fit <- lm(y ~ x2)
+summary(fit)
+```
+
+We can reject the null hypothesis $H_0 : β_2 = 0$, because the `p = 1.366e-06 < 0.05`. When we throw out $x_1$, we get a much more impressive `p` value than when we included both $x_1$ and $x_2$ in the linear regression.
+
+### Part F
+
+In a way, yes, I expected Part E to show a non-significant `p`-value, but instead it was even lower than in Part D!
+
+### Part G
+```{r}
+x1 = c(x1, 0.1)
+x2 = c(x2, 0.8)
+y  = c(y,  6)
+```
+
+
+```{r}
+fit <- lm(y ~ x1 + x2)
+summary(fit)
+```
+
+```{r}
+fit <- lm(y ~ x1)
+summary(fit)
+```
+
+```{r}
+fit <- lm(y ~ x2)
+summary(fit)
+```
+
+This new observation flips the relationship we saw before. Previously, we saw a more significant p value for $x_1$ when we fit the lm to both $x_1$ and $x_2$, while now we have a more significant p value for $x_2$. However, they still both indicate a low p value in the lms where we fit the two variables independently.

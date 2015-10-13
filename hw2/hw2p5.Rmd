@@ -1,0 +1,56 @@
+---
+output: html_document
+---
+
+## Problem 5
+
+### Part A
+
+```{r}
+library("ISLR")
+plot(Auto)
+Auto.quantonly = Auto[, !names(Auto) %in% c("name")] 
+```
+
+### Part B
+
+```{r}
+cor(Auto.quantonly)
+```
+
+### Part C
+
+*Note:* For this problem, I relied heavily on [this site](http://www.r-tutor.com/elementary-statistics/simple-linear-regression/significance-test-linear-regression).
+
+```{r}
+Auto.fit <- lm(mpg ~ cylinders + displacement + horsepower + weight + acceleration + year + origin, data=Auto.quantonly)
+summary(Auto.fit)
+```
+
+#### (i)
+
+Yes, there is a clear relationship between the predictors and the response. The p-value is much less than `0.05`, so we reject the null hypothesis.
+
+#### (ii)
+
+We look at the `Pr(>|t|)` column to determine which predictors appear to have a statistically significant relationship. Here we find that the following predictors have a p-value < `0.05`:
+
+- displacement
+- weight
+- year
+- origin
+
+#### (iii)
+
+The year the car was made is one of the most important predictors for its mpg. This makes sense intuitively as a sanity check, because older cars don't have catalytic converters and they generally weren't built with efficiency in mind.
+
+### Part D
+
+As you can see from the plot below, there are a few issues with the fit:
+
+- There are some unusually large outliers in the residuals vs. the fitted (up in the top right hand corner and bottom right). The model fits our data well on the left, but the variance spreads out as we move rightwards.
+- Nearly all observations are clustered on the left, but then there's one all the way off to the right with an extremely high leverage. This smells fishy...
+
+```{r}
+plot(Auto.fit)
+```

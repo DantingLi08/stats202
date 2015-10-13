@@ -1,0 +1,92 @@
+---
+output: html_document
+---
+
+## Problem 7
+
+### Part A
+
+We can see a statistically significant association between crim and zn, indus, nox, rm, age, dis, rad, tax, ptratio, black, and lstat, all of which have p values `< 0.05`.
+
+```{r}
+library(MASS)
+summary(Boston)
+
+
+layout(matrix(c(1,2), 2, 2, byrow = TRUE))
+
+for (i in 3:length(Boston) - 1) {
+  cat(colnames(Boston)[i])
+  cat('\n===================')
+  fit = lm(crim ~ Boston[,i], data=Boston)
+  print(summary(fit))
+  plot(Boston[,c(1, i)])
+  abline(fit)
+}
+
+```
+
+### Part B
+
+We can reject the null hypothesis for:
+
+- zn
+- dis
+- rad
+- black
+- medv
+
+```{r}
+fit = lm( crim ~ ., data=Boston )
+summary(fit)
+```
+
+### Part C
+Far fewer relationships are marked as "statistically significant" in Part B.
+
+```{r}
+univ_coefficnts = c()
+for (i in 3:length(Boston) - 1) {
+  univ_coefficnts[i - 1] <- summary( lm(crim ~ Boston[,i], data=Boston) )$coefficients[2]
+}
+print(univ_coefficnts)
+
+mult_coefficnts = summary(fit)$coefficients[2:13, 1]
+print(mult_coefficnts)
+
+cat(length(univ_coefficnts))
+cat(length(mult_coefficnts))
+plot(univ_coefficnts, mult_coefficnts)
+```
+
+### Part D
+
+The cubic regressions on the following predictors resulted in a statistically significant p value:
+
+- zn
+- indus
+- nox
+- rm
+- age
+- dis
+- rad
+- tax
+- ptratio
+- black
+- lstat
+
+So yes, there is some evidence of a non-linear association for these predictors, but there's also evidence for a linear associaton, so we can't tell for sure. It's possible that the cubic regression overfits the data for some or all of the predictors.
+
+```{r}
+layout(matrix(c(1,2), 2, 2, byrow = TRUE))
+
+for (i in 3:length(Boston) - 1) {
+  cat(colnames(Boston)[i])
+  cat('\n===================')
+  fit = lm(crim ~ poly(Boston[,i], degree=3, raw=TRUE), data=Boston)
+  print(summary(fit))
+  plot(Boston[,c(1, i)])
+  abline(fit)
+  predict(fit, data.frame(crim = 0:80))
+}
+```
