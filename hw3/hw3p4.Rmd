@@ -1,0 +1,160 @@
+---
+output: html_document
+---
+
+#### Part A ####
+
+After a cursory look into the data, we can see a few patterns:
+
+- The various `Lag` variables tend to clump together.
+- `Direction` is a binary value.
+- `Volume` and `Year` appear to have a statistically significant correlation.
+
+```{r, echo=FALSE}
+library(ISLR)
+plot(Weekly)
+cor(Weekly[,-9])
+```
+
+#### Part B ####
+
+Only the `Lag2` predictor appears statistically significant.
+
+```{r, echo=FALSE}
+fit = glm(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, data=Weekly, family=binomial)
+summary(fit)$coef[,4]
+```
+
+#### Part C ####
+```{r}
+attach(Weekly)
+probs = predict(fit, type = 'response')
+pred = rep('Down', nrow(Weekly))
+pred[probs > .5] = 'Up'
+
+table(pred, Direction)
+mean(pred==Direction)  # Fraction of correct predictions
+```
+
+This tells us that we are making the correct prediction about 56% of the time. In particular, we often wrongly predict "Up" when we should have predicted "Down".
+
+#### Part D ####
+
+```{r}
+train=(Year<=2008)
+Weekly.2009and10 = Weekly[!train,]
+dim(Weekly.2009and10)  #  0  9
+Direction.2009and10 = Direction[!train]
+
+fit = glm(Direction ~ Lag2, data = Weekly, family = binomial, subset = train)
+probs = predict(fit, Weekly.2009and10, type  = 'response')
+
+pred = rep('Down', nrow(Weekly.2009and10))
+pred[probs > .5] = 'Up'
+table(pred, Direction.2009and10)
+mean(pred==Direction.2009and10)
+```
+
+Using just `Lag2` gives us a better result of `62.5%`.
+
+#### Part E ####
+```{r}
+library(MASS)
+lda.fit = lda(Direction ~ Lag2, data = Weekly, subset = train)
+lda.fit
+
+plot(lda.fit)
+
+lda.pred = predict(lda.fit, Weekly.2009and10)
+names(lda.pred)
+lda.class = lda.pred$class
+table(lda.class, Direction.2009and10)
+mean(lda.class == Direction.2009and10)
+sum(lda.pred$posterior[,1] >= .5)
+sum(lda.pred$posterior[,1] < .5)
+```
+
+#### Part F ####
+
+```{r}
+qda.fit = qda(Direction ~ Lag2, data = Weekly, subset = train)
+qda.fit
+
+qda.class = predict(qda.fit, Weekly.2009and10)$class
+table(qda.class, Direction.2009and10)
+mean(qda.class == Direction.2009and10)
+```
+
+#### Part G ####
+
+```{r}
+library(class)
+train.X = as.matrix(Lag2[train])
+test.X  = as.matrix(Lag2[!train])
+train.Direction = Direction[train]
+
+set.seed(1)
+knn.pred = knn(train.X, test.X, train.Direction, k = 1)
+table(knn.pred, Direction.2009and10)
+
+mean(knn.pred == Direction.2009and10)
+```
+
+#### Part H ####
+
+Logistic Regression and Linear Discriminant Analysis tied for the best test results, both resulting in a `62.5%` success rate. 
+
+#### Part I ####
+
+##### 2-means ####
+```{r}
+train.X = as.matrix(Lag2[train])
+test.X  = as.matrix(Lag2[!train])
+train.Direction = Direction[train]
+
+set.seed(1)
+knn.pred = knn(train.X, test.X, train.Direction, k = 2)
+table(knn.pred, Direction.2009and10)
+
+mean(knn.pred == Direction.2009and10)
+```
+
+##### 3-means ####
+```{r}
+train.X = as.matrix(Lag2[train])
+test.X  = as.matrix(Lag2[!train])
+train.Direction = Direction[train]
+
+set.seed(1)
+knn.pred = knn(train.X, test.X, train.Direction, k = 3)
+table(knn.pred, Direction.2009and10)
+
+mean(knn.pred == Direction.2009and10)
+```
+
+##### 4-means ####
+```{r}
+train.X = as.matrix(Lag2[train])
+test.X  = as.matrix(Lag2[!train])
+train.Direction = Direction[train]
+
+set.seed(1)
+knn.pred = knn(train.X, test.X, train.Direction, k = 4)
+table(knn.pred, Direction.2009and10)
+
+mean(knn.pred == Direction.2009and10)
+```
+
+##### 5-means ####
+```{r}
+train.X = as.matrix(Lag2[train])
+test.X  = as.matrix(Lag2[!train])
+train.Direction = Direction[train]
+
+set.seed(1)
+knn.pred = knn(train.X, test.X, train.Direction, k = 5)
+table(knn.pred, Direction.2009and10)
+
+mean(knn.pred == Direction.2009and10)
+```
+

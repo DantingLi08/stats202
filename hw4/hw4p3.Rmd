@@ -1,0 +1,154 @@
+---
+output: html_document
+---
+
+### Problem 3
+
+*Chapter 5, Exercise 8 (Sec. 5.4, p. 200)*
+
+```{r, echo=F}
+library(ggplot2); library(boot); library(ISLR)
+```
+
+#### Part A
+
+```{r}
+set.seed(1)
+y = rnorm(100)
+x = rnorm(100)
+y = x - 2*x^2 + rnorm(100)
+```
+
+```{r}
+n = 100  # number of samples
+p = 2    # number of dimensions
+```
+
+#### Part B
+
+```{r}
+qplot(x, y)
+```
+
+There is clearly a non-random relationship between `x` and `y`. In particular, `y` takes on a parabolic shape centered around 0 as `x` varies. However, there is a range of variance of a bit over 1, creating a band of values rather than a neat line of points.
+
+#### Part C
+
+```{r}
+data = data.frame(y = y, x = x)
+```
+
+##### Linear:
+
+```{r}
+model = glm(y ~ x, data = data)
+model$coef
+```
+```{r, echo=F}
+cv.err = cv.glm(data, model)$delta
+cat('standard k-fold CV estimate =', cv.err[1], '\n',
+     '    bias-corrected version =', cv.err[2])
+```
+
+##### Squared:
+
+```{r}
+model = glm(y ~ poly(x, degree = 2), data = data)
+model$coef
+```
+```{r, echo=F}
+cv.err = cv.glm(data, model)$delta
+cat('standard k-fold CV estimate =', cv.err[1], '\n',
+     '    bias-corrected version =', cv.err[2])
+```
+
+##### Cubic:
+
+```{r}
+model = glm(y ~ poly(x, degree = 3), data = data)
+model$coef
+```
+```{r, echo=F}
+cv.err = cv.glm(data, model)$delta
+cat('standard k-fold CV estimate =', cv.err[1], '\n',
+     '    bias-corrected version =', cv.err[2])
+```
+
+##### Quadratic:
+
+```{r}
+model = glm(y ~ poly(x, degree = 4), data = data)
+model$coef
+```
+```{r, echo=F}
+cv.err = cv.glm(data, model)$delta
+cat('standard k-fold CV estimate =', cv.err[1], '\n',
+     '    bias-corrected version =', cv.err[2])
+```
+
+#### Part D
+
+```{r}
+set.seed(5)
+y = rnorm(100)
+x = rnorm(100)
+y = x - 2*x^2 + rnorm(100)
+
+data   = data.frame(y = y, x = x)
+```
+
+##### Linear:
+
+```{r}
+model = glm(y ~ x, data = data)
+```
+```{r, echo=F}
+cv.err = cv.glm(data, model)$delta
+cat('standard k-fold CV estimate =', cv.err[1], '\n',
+     '    bias-corrected version =', cv.err[2])
+```
+
+##### Squared:
+
+```{r}
+model = glm(y ~ poly(x, degree = 2), data = data)
+```
+```{r, echo=F}
+cv.err = cv.glm(data, model)$delta
+cat('standard k-fold CV estimate =', cv.err[1], '\n',
+     '    bias-corrected version =', cv.err[2])
+```
+
+##### Cubic:
+
+```{r}
+model = glm(y ~ poly(x, degree = 3), data = data)
+```
+```{r, echo=F}
+cv.err = cv.glm(data, model)$delta
+cat('standard k-fold CV estimate =', cv.err[1], '\n',
+     '    bias-corrected version =', cv.err[2])
+```
+
+##### Quadratic:
+
+```{r}
+model = glm(y ~ poly(x, degree = 4), data = data)
+```
+```{r, echo=F}
+cv.err = cv.glm(data, model)$delta
+cat('standard k-fold CV estimate =', cv.err[1], '\n',
+     '    bias-corrected version =', cv.err[2])
+```
+
+Both runs use the same data generator function, but the `rnorm(...)` creates variance between runs. This variance results in slightly different fits resulting from a linear regression model.
+
+#### Part E
+
+The squared model had the smallest error. This is what I expected, since the original function is based off the square of `x`.
+
+#### Part F
+
+Our original function was `y = x - 2*x^2 + rnorm(100)`, which means the correct coefficients ought to be: `B0 = 0, B1 = 1, B2 = -2`.
+
+Instead, we got `[-1.82, 0.24]`, `[-1.83, 2.32, -21.06]`, `[-1.83, 2.31, -21.06, -0.35]`, and `[-1.83, 2.32, -21.06, -0.31, -0.49]` for the linear, squared, cubed, and quadratic fits respectively. These are wayyyy off, even for the best fit (squared, with coefficients `[-1.83, 2.32, -21.06]`). This does not agree with the conclusions drawn based on the cross-validation results, which implied that the squared fit was fairly accurate.

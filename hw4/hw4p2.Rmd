@@ -1,0 +1,38 @@
+---
+output: html_document
+---
+
+### Problem 2
+
+*Chapter 5, Exercise 6 (Sec. 5.4, p. 199)*
+
+```{r, echo=FALSE, warning=F}
+library(ISLR); library(boot)
+set.seed(1)
+attach(Default)
+```
+
+#### Part A
+
+```{r}
+fit = glm(default ~ income + balance, family = 'binomial')
+summary(fit)$coef
+```
+
+#### Part B
+
+```{r}
+boot.fn = function(d, i)
+  return( coef(lm(default ~ income + balance, data = d, subset = i)) )
+```
+
+#### Part C
+
+```{r, warning=F}
+boot.fn(Default, 1:nrow(Default))
+boot(Default, boot.fn, 1000)
+```
+
+#### Part D
+
+The estimated standard errors obtained using the `glm()` function and the bootstrap function were within a fairly small range of each other. `glm()` resulted in standard errors of `[4.3e-1, 4.9e-6, 2.3e-4]`, while bootstrap resulted in `[6.5e-3, 1.3e-7, 6.6e-6]`, both of which equate to very small errors. As a result, we can see that the two methods are interchangeable in this situation.

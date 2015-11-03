@@ -1,0 +1,75 @@
+---
+output: html_document
+---
+
+### Problem 5
+
+##### Notes from lecture
+
+- resampling rows of our data matrix (a.k.a. "bootstrap replicates")
+- extract principal components of each sampled matrix
+- what's the range of loading values on each sampled matrix?
+
+```{r, echo=FALSE, warning=F}
+library(boot); library(ggplot2)
+```
+
+##### Part 1
+
+```{r}
+set.seed(1)
+# Calculate matrix of % variance explained.
+boot.fn = function(d, i) {
+  pr.out = prcomp(d[i,], scale = TRUE)
+  pr.var = pr.out$sdev^2
+  return( (pr.var / sum(pr.var))[1:2] )
+}
+pca = boot.fn(USArrests)
+bs  = boot(USArrests, boot.fn, R = 1000)
+
+barplot(100 * pca, xlab='', ylab='% Variance Explained', ylim = c(0, 100), col = rainbow(2))
+```
+
+##### Part 2
+
+```{r}
+sd(bs$t)
+boot.ci(bs, type='bca')
+```
+
+##### Part 3
+
+The loading values for resulting from PCA can have a sign flip. If we naively place it into our plot, it makes our spread look huge.
+
+##### Part 4
+
+```{r}
+# boot.fn = function(data, i) {
+#   pr.out = prcomp(data[i,], scale=TRUE)
+#   v = pr.out$rotation[,1]
+#   i = which.max(abs(v))
+#   return(v)
+# }
+# bs = boot(USArrests, boot.fn, R = 1000)
+# boxplot(bs)
+
+boot.fn = function(data, i) {
+  sampled = sample(nrow(data[i, ]), 1000, replace = TRUE)
+  d       = data[i, ][sampled, ]
+  pca.out = prcomp(d, scale=T)
+  pca.v   = pca.out$rotation[,1]
+  i       = which.max(abs(pca.v))
+  pca.vf  = pca.v * sign(pca.v[i])
+  return(t(data.frame(pca.vf)))
+}
+```
+
+##### Part 5
+
+```{r}
+boxplot(boot.fn(USArrests))
+```
+
+##### Part 6
+
+We solved our problem in part 3 by multiplying the principal component by the sign of its largest element. This method relies on the assumption that the correct boxplot doesn't range over both negative and positive values, overlapping the `y = 0` line. This particularly becomes a problem because the last principal components tend to have higher variance than the first, resulting in a taller box for those components in the box plot, which in turn makes it more likely that the box will overlap both positive and negative values.

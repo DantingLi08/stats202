@@ -1,0 +1,102 @@
+---
+output: html_document
+---
+
+### Problem 1
+
+*Chapter 5, Exercise 5 (Sec. 5.4, p. 198).*
+
+```{r, echo=FALSE, warning=F}
+library(ISLR); library(ROCR); library(nnet); library(ggplot2); library(gridExtra); 
+library(caTools); library(caret); library(boot)
+set.seed(3)
+```
+
+#### Part A
+
+```{r, echo=F}
+plot(Default)
+attach(Default)
+```
+```{r}
+fit = glm(default ~ income + balance, family = 'binomial')
+coef(fit)
+
+tmp = table(Default$default)
+percent_defaults = (tmp[[2]]/tmp[[1]])*100
+cat(percent_defaults, "percent of people default")
+
+# The following code is inspired by: rpubs.com/ryankelly/21379
+x = qplot(x = balance, y = income, color = default, geom = 'point') + scale_shape(solid = FALSE)
+y = qplot(x = default, y = balance, fill = default, geom = 'boxplot') + guides(fill = FALSE)
+z = qplot(x = default, y = income, fill = default, geom = 'boxplot') + guides(fill = FALSE)
+x
+grid.arrange(y, z, nrow=1)
+```
+
+#### Part B
+
+```{r}
+set.seed(1)
+
+total = nrow(Default)
+num   = floor(0.9 * total)
+
+sampled       = Default[sample(total), ]
+Default.train = sampled[1:num, ]
+Default.test  = sampled[(num + 1):total, ]
+fit = multinom(default ~ income + balance, data = Default.train, family = 'binomial')
+print(summary(fit))
+pred = predict(fit, Default.test)
+print(confusionMatrix(pred, Default.test$default)$table)
+```
+
+#### Part C
+
+```{r, echo=FALSE}
+dummy = function(x) if(x=='No') 0 else 1
+
+for (i in 2:4) {
+  set.seed(i)
+  cat('\n====== Cross validation run #', i, '=========================\n')
+  sampled       = Default[sample(total), ]
+  Default.train = sampled[1:num, ]
+  Default.test  = sampled[(num + 1):total, ]
+  fit = multinom(default ~ income + balance, data = Default.train, family = 'binomial')
+  pred = predict(fit, Default.test)
+  print(confusionMatrix(pred, Default.test$default)$table)
+  
+  d = sapply(Default$default, dummy)
+  p = sapply(pred, dummy)
+  cat('MSE =', mean((d - p)^2))}
+```
+
+Each of the 4 runs gave in similar results with just a little bit of variation:
+
+- The 0-1 loss for each run was `25/1000`, `31/1000`, `26/1000`, and `33/1000` respectively.
+- Of these errors, the respective ratios of false positives to false negatives were `6:19`, `2:29`, `4:22`, and `4:29`.
+- We missed `10/(10 + 19) = .35`, `13/(29 + 13) = .31`, `8/(8 + 22) = .27`, and `7/(7 + 29) = .19` of defaults.
+- We missed `6/(6 + 965) = .0062`, `2/(2 + 956) = .0021`, `4/(4 + 966) = .0041`, and `4/(960 + 4) = .0041` of non-defaults.
+
+Our model does a pretty good job at categorizing non-defaults correctly (missing < 1%), but it fails miserably on actual defaults (missing upwards of 20% and as bad as 35%).
+
+#### Part D
+
+
+```{r, echo=F}
+for (i in 1:4) {
+  set.seed(i)
+  cat('\n====== Cross validation run #', i, '=========================\n')
+  sampled       = Default[sample(total), ]
+  Default.train = sampled[1:num, ]
+  Default.test  = sampled[(num + 1):total, ]
+  fit = multinom(default ~ income + balance + student, data = Default.train, family = 'binomial')
+  pred = predict(fit, Default.test)
+
+  d = sapply(Default$default, dummy)
+  p = sapply(pred, dummy)
+  cat('MSE =', mean((d - p)^2))
+}
+```
+
+Including the student variable didn't affect our MSE significantly. Since it has no notable effect on our results, it's best to just remove the student variable from our analysis entirely.

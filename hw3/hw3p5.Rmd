@@ -1,0 +1,33 @@
+---
+output: html_document
+---
+
+## Problem 5
+
+```{r}
+library(MASS)
+library(nnet)
+library(ggplot2)
+
+rosters <- read.csv('rosters.csv')
+summary(rosters)
+fit = multinom(sport ~ height + weight, rosters)
+summary(fit)
+
+Height = rosters$height
+Weight = rosters$weight
+Sports = rosters$sport
+qplot(Height, Weight, rosters, color=Sports)
+
+pred = predict(fit, rosters)
+pred
+
+qplot(Height, Weight, pred, color=Sports)
+
+table(rosters$sport, pred)
+success_rate = mean(pred == rosters$sport)
+```
+```{r, echo=FALSE}
+cat('Our success rate is', success_rate)
+cat('Our 0-1 loss error rate is', 1 - success_rate)
+```

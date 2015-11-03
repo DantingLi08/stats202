@@ -1,0 +1,89 @@
+---
+output: html_document
+---
+
+### Problem 4
+
+*Chapter 5, Exercise 9 (Sec. 5.4, p. 201)*
+
+```{r, echo=FALSE, warning=F}
+library(MASS); library(boot); library(ggplot2)
+```
+
+```{r, warning=F}
+m = Boston$medv
+qplot(m, xlab = 'medv values')
+```
+
+#### Part A
+
+```{r}
+m.mean = mean(m)
+m.mean
+```
+
+#### Part B
+
+```{r}
+m.std_err = sd(m)/sqrt(nrow(Boston))
+m.std_err
+```
+
+This standard error is fairly low, though it could be better.
+
+#### Part C
+
+
+```{r}
+# Inspiration for the following code comes from:
+#   stats.stackexchange.com/questions/22472/use-of-standard-error-
+#   of-bootstrap-distribution
+
+m.bs = boot(m, function(d, i) mean(d[i]), 1000)
+
+# The standard error from bootstrap is simply the standard deviation
+# of the bootstrap distribution:
+sd(m.bs$t)
+```
+
+The bootstrap method's standard error is very similar to that of part (b).
+
+#### Part D
+
+```{r}
+boot.ci(m.bs, type='bca')
+t.test(Boston$medv)
+```
+
+These result in nearly identical confidence intervals, with a difference of `< 0.1` on each end.
+
+#### Part E
+
+```{r}
+m.median = median(m)
+m.median
+```
+
+#### Part F
+
+```{r}
+m.bs = boot(m, function(d, i) median(d[i]), 1000)
+sd(m.bs$t)
+```
+
+The standard error of the median using the bootstrap (`0.385`) is somewhat lower than that of the mean (`0.419`).
+
+#### Part G
+
+```{r}
+u10 = quantile(m, c(.10))
+```
+
+#### Part H
+
+```{r}
+m.bs = boot(m, function(d, i) quantile(d[i], c(.10)), 1000)
+sd(m.bs$t)
+```
+
+Our standard error increases significantly when we try to predict the 10th percentile. This is understandable; since our data basically takes the form of a normal distribution, the bulk of the data is in the middle, while there are far fewer examples to draw upon on the edges.
