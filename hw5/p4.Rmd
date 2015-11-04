@@ -1,0 +1,140 @@
+---
+output: html_document
+---
+
+*In this exercise, we will generate simulated data, and will then use this data to perform best subset selection.*
+
+#### Part A ####
+
+> Use the `rnorm()` function to generate a predictor `X` of length `n = 100`, as well as a noise vector `ε` of length `n = 100`.
+
+```{r}
+set.seed(5)
+X = rnorm(100, mean = 0, sd = 1)
+e = rnorm(100, mean = 0, sd = 0.5)
+```
+
+#### Part B ####
+
+> Generate a response vector `Y` of length `n = 100` according to the model $Y = β0 +β1X +β2 X_2 +β3X_3 +ε$, where `β0`, `β1`, `β2`, and `β3` are constants of your choice.
+
+```{r}
+b0 = 2
+b1 = 3
+b2 = 4
+b3 = 5
+
+Y = b0 + b1*X + b2*X^2 + b3*X^3 + e
+```
+
+#### Part C ####
+
+> Use the `regsubsets()` function to perform best subset selection in order to choose the best model containing the predictors $X, X_2, . . . , X_{10}$. What is the best model obtained according to Cp, BIC, and adjusted R2? Show some plots to provide evidence for your answer, and report the coefficients of the best model obtained. Note you will need to use the `data.frame()` function to create a single data set containing both `X` and `Y`.
+
+```{r}
+library(ISLR)
+library(leaps)
+
+df      = data.frame(Y = Y, X = X)
+fit     = regsubsets(Y ~ poly(X, 10, raw = T), data = df, nvmax = 10)
+fit_sum = summary(fit)
+
+par(mfrow = c(2,2)) # Display graphs in two rows, two columns
+x_axis_label = '# of variables'
+
+plot   (fit_sum$rss,xlab = x_axis_label, ylab = 'RSS', type = 'l')
+
+plot   (fit_sum$cp,xlab = x_axis_label, ylab = 'Cp', type = 'l')
+points (which.min(fit_sum$cp), fit_sum$cp[which.min(fit_sum$cp)], col = 'orange', pch = 15, cex = 1)
+
+plot   (fit_sum$bic,xlab = x_axis_label,  ylab = 'BIC', type = 'l')
+points (which.min(fit_sum$bic), fit_sum$bic[which.min(fit_sum$bic)], col = 'orange', pch = 15, cex = 1)
+
+plot   (fit_sum$adjr2,xlab = x_axis_label, ylab = 'R2', type = 'l')
+points (which.max(fit_sum$adjr2), fit_sum$adjr2[which.max(fit_sum$adjr2)], col = 'orange', pch = 15, cex = 1)
+
+coef(fit, 3)
+coef(fit, 4)
+```
+
+#### Part D ####
+
+> Repeat c using forward stepwise selection and also using backwards stepwise selection. How does your answer compare to the results in c?
+
+```{r}
+fit     = regsubsets(Y~poly(X, 10, raw = T), data = df, nvmax = 10, method = 'forward')
+fit_sum = summary(fit)
+
+par(mfrow = c(2, 2))
+
+plot(fit_sum$rss, xlab = 'Number of Variables', ylab = 'RSS', type = 'l')
+
+plot(fit_sum$cp, xlab = 'Number of Variables', ylab = 'Cp', type = 'l')
+points(which.min(fit_sum$cp), fit_sum$cp[which.min(fit_sum$cp)], col = 'orange', pch = 15, cex = 1)
+
+plot(fit_sum$bic, xlab = 'Number of Variables', ylab = 'BIC',  type = 'l')
+points(which.min(fit_sum$bic), fit_sum$bic[which.min(fit_sum$bic)], col = 'orange', pch = 15, cex = 1)
+
+plot(fit_sum$adjr2, xlab = 'Number of Variables', ylab = 'Adjusted R2', type = 'l')
+points(which.max(fit_sum$adjr2), fit_sum$adjr2[which.max(fit_sum$adjr2)], col = 'orange', pch = 15, cex = 1)
+
+
+coef(fit, 3)  # Cp
+coef(fit, 3)  # BIC
+coef(fit, 3)  # Adjusted R2
+```
+
+#### Part E ####
+
+> Now fit a lasso model to the simulated data, again using $X,X_{2}, . . . , X_{10}$ as predictors. Use cross-validation to select the optimal value of `λ`. Create plots of the cross-validation error as a function of `λ`. Report the resulting coefficient estimates, and discuss the results obtained.
+
+```{r}
+library(glmnet)
+matrix = model.matrix(Y ~ poly(X, 10, raw = T), data = df)[, -1]
+
+cv_results = cv.glmnet(matrix, Y, alpha = 1)
+plot(cv_results)
+
+min_lambda = cv_results$lambda.min
+min_lambda
+
+lasso_model = glmnet(matrix, Y, alpha = 1, lambda = min_lambda)
+coef(lasso_model)
+```
+
+#### Part F ####
+
+> Now generate a response vector `Y` according to the model $Y = β0 + β7X_7 + ε$, and perform best subset selection and the lasso. Discuss the results obtained.
+
+```{r}
+set.seed(5)
+X = rnorm(100, mean = 0, sd = 1)
+e = rnorm(100, mean = 0, sd = 0.5)
+
+b0 = 8
+b7 = 77
+
+Y = b0 + b7*X^7 + e
+
+df = data.frame(Y = Y, X = X)
+fit = regsubsets(Y~poly(X, 10, raw = T), data = df, nvmax = 10)
+fit_sum = summary(fit)
+
+par(mfrow = c(2, 2))
+plot(fit_sum$rss,   xlab = 'Number of Variables', ylab = 'RSS',          type = 'l')
+
+plot(fit_sum$cp,    xlab = 'Number of Variables', ylab = 'Cp',           type = 'l')
+points(which.min(fit_sum$cp), fit_sum$cp[which.min(fit_sum$cp)], col = 'orange', pch = 15, cex = 2)
+
+plot(fit_sum$bic,   xlab = 'Number of Variables', ylab = 'BIC',          type = 'l')
+points(which.min(fit_sum$bic), fit_sum$bic[which.min(fit_sum$bic)], col = 'orange', pch = 15, cex = 2)
+
+plot(fit_sum$adjr2, xlab = 'Number of Variables', ylab = 'Adjusted R2',  type = 'l')
+points(which.max(fit_sum$adjr2), fit_sum$adjr2[which.max(fit_sum$adjr2)], col = 'orange', pch = 15, cex = 2)
+
+coef(fit, 2) # Cp
+coef(fit, 1) # BIC
+coef(fit, 4) # R2
+
+matrix = model.matrix(Y~poly(X, 10, raw = T), data = df)[, -1]
+```
