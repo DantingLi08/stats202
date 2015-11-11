@@ -62,7 +62,7 @@ coef(fit, 4)
 > Repeat c using forward stepwise selection and also using backwards stepwise selection. How does your answer compare to the results in c?
 
 ```{r}
-fit     = regsubsets(Y~poly(X, 10, raw = T), data = df, nvmax = 10, method = 'forward')
+fit     = regsubsets(Y ~ poly(X, 10, raw = T), data = df, nvmax = 10, method = 'forward')
 fit_sum = summary(fit)
 
 par(mfrow = c(2, 2))

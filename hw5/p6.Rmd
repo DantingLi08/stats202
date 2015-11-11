@@ -1,0 +1,122 @@
+## Problem 6 ##
+
+*Chapter 6, Exercise 10 (p. 263)*
+
+> We have seen that as the number of features used in a model increases, the training error will necessarily decrease, but the test error may not. We will now explore this in a simulated data set.
+
+#### Part A ####
+
+> Generate a data set with `p = 20` features, `n = 1000` observations, and an associated quantitative response vector generated according to the model `Y = Xβ + ε`, where `β` has some elements that are exactly equal to `0`.
+
+```{r}
+set.seed(19)  # Some randomization in the setup.
+
+p = 20
+n = 1000
+
+X = matrix(rnorm(p * n), ncol = p, nrow = n)
+
+# Randomly set some elements in beta equal to zero.
+beta              = rnorm(p, sd = 10)
+num_rand_zeroes   = sample(0:p/3)
+rand_zeroes       = sample(seq(1, length(beta)), num_rand_zeroes, replace = F)
+beta[rand_zeroes] = 0
+
+e = rnorm(n)
+Y = as.vector(X * beta + e)
+```
+
+#### Part B ####
+
+> Split your data set into a training set containing `100` observations and a test set containing `900` observations.
+
+```{r}
+n_training_observations = 100
+train   = sample(1:nrow(X), n_training_observations)
+test    = (-train)
+
+X.train = X[train]
+Y.train = Y[train]
+X.test  = X[test ]
+Y.test  = Y[test ]
+
+df.train = data.frame(y = Y.train, x = X.train)
+df.test  = data.frame(y = Y.test,  x = X.test)
+```
+
+#### Part C ####
+
+> Perform best subset selection on the training set, and plot the training set MSE associated with the best model of each size.
+
+```{r}
+library(leaps)
+fit      = regsubsets(y ~ poly(x, p, raw = T), data = df.train, nvmax = p)
+
+plot(fit)
+```
+
+
+#### Part D ####
+
+> Plot the test set MSE associated with the best model of each size.
+
+```{r}
+mse = function(prediction, real) {
+  mean((prediction - real)^2)   
+}
+
+predict_regsubsets = function(obj, newdata, id) { 
+  form   = as.formula(obj$call[[2]]) # Extract formula.
+  matrix = model.matrix(form, newdata)
+  coefic = coef(obj, id = id)
+  xvars  = names(coefic)
+  matrix[, xvars] * coefic
+}
+
+test.mse = sapply(1:p, function(id) {
+  prediction = predict_regsubsets(fit, df.test, id)
+  mse(prediction, Y.test)
+})
+
+plot(seq(1:p), test.mse, xlab = '# of Features', ylab = 'Test MSE')
+points(which.min(test.mse), test.mse[which.min(test.mse)], col = 'orange', cex = 2, pch = 20)
+
+coef(fit, id = which.min(test.mse))
+```
+
+
+#### Part E ####
+
+> For which model size does the test set MSE take on its minimum value? Comment on your results. If it takes on its minimum value for a model containing only an intercept or a model containing all of the features, then play around with the way that you are generating the data in (a) until you come up with a scenario in which the test set MSE is minimized for an intermediate model size.
+
+The test MSE is low and approximately constant from 0-11 features. After that, it shoots up. This is expected -- since we set beta to `0` for some of the features, it's better to simply throw those out of our model since they don't provide any information.
+
+
+#### Part F ####
+
+> How does the model at which the test set MSE is minimized compare to the true model used to generate the data? Comment on the coefficient values.
+
+The test MSE is low until we begin to include the features whose beta values are `0`. This makes sense and matches the reality of our model.
+
+#### Part G ####
+
+> Create a plot displaying $$\sqrt{ \sum_{j=1}^{p} \Big(\beta_j - \hat{\beta_j^{r}} \Big)^{2} }$$ for a range of values of `r`, where $\hat{\beta_j^{r}}$ is the `j`th coefficient estimate for the best model containing `r` coefficients. Comment on what you observe. How does this compare to the test MSE plot from (d)?
+
+```{r}
+rsqdiffs = sapply(1:p, function(r) {
+  coefics    = coef(fit, id = r)
+  coef_names = names(coefics)
+  beta.est   = sapply(1:p, function(i) {
+    id = sprintf('Feature #%d', i)
+    if (id %in% coef_names) {
+      return(coefics[id])
+    } else return(0)
+  })
+  return(sqrt( sum((beta - beta.est)^2)) )
+})
+
+plot(seq(1:p), rsqdiffs, xlab = '# of Features', ylab = 'Root Squared Difference of Betas')
+points(which.min(rsqdiffs), rsqdiffs[which.min(rsqdiffs)], col = 'orange', cex = 2, pch = p)
+```
+
+All possibilities of `k` features have approximately the same Root Squared Difference of Betas.

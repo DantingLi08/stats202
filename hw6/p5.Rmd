@@ -1,0 +1,88 @@
+### Part A ###
+
+```{r}
+set.seed(8)
+library(MASS)
+library(boot)
+library(splines)
+df = Boston
+
+# Cubic polynomial regression to predict nox using dis.
+fit = lm(nox ~ poly(dis, 3), data = df)
+summary(fit)
+
+dis.range = range(df$dis)
+dis.seq = seq(from = dis.range[1], to = dis.range[2])
+prediction = predict(fit, list(dis = dis.seq))
+plot(nox ~ dis, data = df)
+lines(dis.seq, prediction, lwd = 4, col = 'blue')
+```
+
+### Part B ###
+
+```{r}
+N = 10
+reps = rep(NA, N)
+for (i in 1:N) {
+  fit = lm(df$nox ~ poly(dis, i), data = df)
+  reps[i] = sum(fit$residuals^2)
+}
+reps
+```
+
+### Part C ###
+
+```{r, warning=F}
+NUM_FOLDS = 20
+reps = rep(NA, N)
+for (i in 1:N) {
+    fit = glm(df$nox ~ poly(df$dis, i), data = df)
+    reps[i] = cv.glm(df, fit, K = NUM_FOLDS)$delta[2]
+}
+plot(1:N, reps, xlab = 'Polynomial degree', ylab = '20-fold CV error', lwd = 2, col = 'blue', type = 'l')
+```
+
+We pick `1` as the best polynomial degree, since it has the lowest cross-validation error.
+
+### Part D ###
+
+```{r}
+fit = lm(nox ~ bs(dis, df = 4, knots = c(3, 7, 11)), data = df)
+summary(fit)
+
+prediction = predict(fit, list(dis = dis.seq))
+plot(nox ~ dis, data = df)
+lines(dis.seq, prediction, col = 'blue', lwd = 4)
+```
+
+I chose the knots based such that the data was roughly split into even pieces (since `dis`'s lower limit is ~1 and its upper limit is ~13).
+
+### Part E ###
+
+```{r}
+NUM_DEGREES_OF_FREEDOM = 25
+reps = rep(NA, NUM_DEGREES_OF_FREEDOM)
+
+# Fit a regression spline for a range a degrees of freedom.
+for (i in 1:NUM_DEGREES_OF_FREEDOM) {
+    fit = lm(nox ~ bs(dis, df = i), data = df)
+    reps[i] = sum(fit$residuals^2)
+}
+reps[-c(1, 2)]
+plot(reps[-c(1, 2)])
+```
+
+Decreases monotonically as the degree of freedom increases.
+
+### Part F ###
+
+```{r, warning=F}
+reps = rep(NA, NUM_DEGREES_OF_FREEDOM)
+for (i in 1:NUM_DEGREES_OF_FREEDOM) {
+    fit = glm(nox ~ bs(dis, df = i), data = df)
+    reps[i] = cv.glm(df, fit, K = N)$delta[2]
+}
+plot(1:NUM_DEGREES_OF_FREEDOM, reps, lwd = 2, col = 'blue', xlab = '# degrees of freedom', ylab = '20-fold CV error', type = 'l')
+```
+
+CV is at a minimum when we have 12 degrees of freedom.

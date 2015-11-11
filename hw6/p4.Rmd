@@ -1,0 +1,11 @@
+```{r}
+library(ISLR)
+library(gam)
+
+df = Auto
+summary(df)
+plot(df)
+
+fit = gam(mpg ~ s(horsepower, 3) + s(displacement, 3), data = df)
+summary(fit)
+```

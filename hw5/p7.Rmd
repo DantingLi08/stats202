@@ -1,0 +1,49 @@
+## Problem 7 ##
+
+*Chapter 6, Exercise 6 (p. 261)*
+
+Expression 6.12: $$\sum_j^{p} ( y_j - \beta_j)^{2} + \alpha \sum_j^{p} \beta_j^{2}$$
+Expression 6.13: $$\sum_j^{p} ( y_j - \beta_j)^{2} + \alpha \sum_j | \beta_j |$$
+Expression 6.14: $$\hat\beta_j ^R=\frac{y_j }{1+\alpha}$$
+Expression 6.15: $$\hat\beta_j ^L=\begin{cases}y_j -\alpha/2 & \text{if } y_j  > \alpha/2;\ y_j  + \alpha/2 & \text{if } y_j  < -\alpha/2; \ 0 & \text{if } |y_j | \leq \alpha/2. \end{cases}$$
+
+
+###### Part A ######
+
+> Consider (6.12) with `p = 1`. For some choice of `y1` and `λ > 0`, plot (6.12) as a function of `β1`. Your plot should confirm that (6.12) is solved by (6.14).
+
+```{r}
+par(mfrow = c(3, 4))  # Draw graphs in 3 rows, 4 columns.
+for (A in seq(0, 11)) {
+  y1    = 8
+  b1    = seq(-8, 8, by = 0.05)
+  y_hat = ((y1 - b1)^2) + (A*b1^2)
+  
+  plot(b1, y_hat)
+  abline(v = y1/(1 + A), col = 'cyan', lwd = 1)
+  points(b1[which.min(y_hat)], y_hat[which.min(y_hat)],  col = 'orange', cex = 2, pch = 20)
+}
+```
+
+###### Part B ######
+
+Consider (6.13) with `p = 1`. For some choice of `y1` and `λ > 0`, plot (6.13) as a function of `β1`. Your plot should confirm that (6.13) is solved by (6.15).
+
+```{r}
+opt.y.lasso = function(y, a) {
+  if (y > a/2)        return(y- a/2)
+  if (y < -a/2)       return(y + a/2)
+  if (abs(y) <= a/2)  return(0)
+}
+
+par(mfrow = c(3, 4))  # Draw graphs in 3 rows, 4 columns.
+for (A in seq(0, 11)) {
+  y1 = 8
+  b1 = seq(-8, 8, by = 0.05)
+  yhat = (y1 - b1)^2 + A*abs(b1)
+  
+  plot(b1, yhat)
+  abline(v = opt.y.lasso(y1, A), col = 'cyan', lwd = 1) 
+  points(b1[which.min(yhat)], yhat[which.min(yhat)], col = 'orange', cex = 2, pch = 20)
+}
+```

@@ -1,0 +1,130 @@
+---
+output: html_document
+---
+
+
+#### Part A ####
+
+> Split the data set into a training set and a test set.
+
+```{r}
+library(ISLR)
+library(Matrix)
+
+df.train      = sample(c(T, F), nrow(College), rep = T)
+df.test       = (!df.train)
+College.train = College[df.train, , drop = F]
+College.test  = College[df.test, , drop = F]
+```
+
+#### Part B ####
+
+> Fit a linear model using least squares on the training set, and report the test error obtained.
+
+```{r}
+fit = lm(Apps~., data = College.train)
+summary(fit)
+
+pred = predict(fit, College.test)
+tss  = sum((College.test$Apps - mean(College.test$Apps))^2)
+rss  = sum((pred - College.test$Apps)^2)
+
+rsq = 1 - rss/tss
+rsq
+```
+
+
+#### Part C ####
+
+> Fit a ridge regression model on the training set, with λ chosen by cross-validation. Report the test error obtained.
+
+```{r}
+library(glmnet)
+
+College.train.x = scale(model.matrix(Apps ~ ., data = College.train)[,-1],scale = T, center = T)
+College.train.y = College.train$Apps
+
+College.test.x = scale(model.matrix(Apps ~ ., data = College.test)[,  - 1], attr(College.train.x, 'scaled:center'), attr(College.train.x, 'scaled:scale'))
+College.test.y = College.test$Apps
+
+cv_result = cv.glmnet(College.train.x, College.train.y, alpha = 0)
+min_lambda = cv_result$lambda.min
+min_lambda
+
+lasso_model = glmnet(College.train.x, College.train.y, alpha = 0, lambda = min_lambda)
+
+pred = predict(lasso_model, College.test.x, s = min_lambda)
+rss  = sum((pred - College.test$Apps)^2)
+tss  = sum((College.test$Apps - mean(College.test$Apps))^2)
+
+rsq = 1 - rss/tss
+rsq
+```
+
+
+#### Part D ####
+
+> Fit a lasso model on the training set, with λ chosen by cross-validation. Report the test error obtained, along with the number of non-zero coefficient estimates.
+
+```{r}
+cv_result = cv.glmnet(College.train.x, College.train.y, alpha = 1)
+min_lambda = cv_result$lambda.min
+min_lambda
+
+lasso_model = glmnet(College.train.x, College.train.y, alpha = 1, lambda = min_lambda)
+
+pred = predict(lasso_model, College.test.x, s = min_lambda)
+rss = sum((pred - College.test$Apps)^2)
+tss = sum((College.test$Apps - mean(College.test$Apps))^2)
+
+rsq = 1 - rss/tss
+rsq
+
+sum(coef(lasso_model)[, 1] == 0)  # Get the # of coefficients that equal 0
+names(coef(lasso_model)[, 1][coef(lasso_model)[, 1] == 0])
+```
+
+
+#### Part E ####
+
+> Fit a PCR model on the training set, with M chosen by cross-validation. Report the test error obtained, along with the value of M selected by cross-validation.
+
+```{r}
+library(pls)
+fit  = pcr(Apps ~ ., data = College.train, scale = T, validation = 'CV')
+summary(fit)
+
+pred = predict(fit, College.test, ncomp = 17)
+rss  = sum((pred - College.test$Apps)^2)
+tss  = sum((College.test$Apps - mean(College.test$Apps))^2)
+
+rsq  = 1 - rss/tss
+rsq
+```
+
+
+#### Part F ####
+
+> Fit a PLS model on the training set, with M chosen by cross- validation. Report the test error obtained, along with the value of M selected by cross-validation.
+
+```{r}
+fit = plsr(Apps ~ ., data = College.train, scale = T, validation = 'CV')
+summary(fit)
+
+pred = predict(fit, College.test, ncomp = 7)
+rss  = sum((pred - College.test$Apps)^2)
+tss  = sum((College.test$Apps - mean(College.test$Apps))^2)
+
+rsq = 1 - rss/tss
+rsq
+```
+
+#### Part G ####
+
+> Comment on the results obtained. How accurately can we predict the number of college applications received? Is there much difference among the test errors resulting from these five approaches?
+
+- All models had similar performance, with RSQ values of 89.5%, 89.3%, 89.6%, 89.5%, and 89.5& for least squares, ridge regression, lasso model, PCR, and PLS respectively.
+- PLS chose a model with the fewest number of predictors (7 of the 17 available) and minimized the majority of the variance while at the same time performing well on test sets.
+- Lasso performed similarly well, but it used 14 of the predictors.
+
+

@@ -1,0 +1,72 @@
+### Part A
+
+```{r}
+set.seed(51)  # Because 51 is edgy.
+
+N  = 100
+x1 = rnorm(N)
+x2 = rnorm(N)
+e  = rnorm(100, sd = 1)
+
+y  = 1.2 + 2.3*x1 + 3.4*x2
+```
+
+### Parts C & B
+
+```{r}
+b1 = 5
+a  = y - b1*x1
+b2 = lm(a ~ x2)$coef[2]
+```
+
+### Part D
+
+```{r}
+a  = y - b2*x2
+b1 = lm(a ~ x1)$coef[2]
+```
+
+### Part E
+
+```{r}
+NUM_ITERATIONS = 1000
+b0 = rep(NA, NUM_ITERATIONS)
+
+for (i in 1:NUM_ITERATIONS) {
+    a     = y - b1[i] * x1
+    b2[i] = lm(a ~ x2)$coef[2]
+    a     = y - b2[i] * x2
+    fit   = lm(a ~ x1)
+    if (i < NUM_ITERATIONS) {
+        b1[i + 1] = fit$coef[2]
+    }
+    b0[i] = fit$coef[1]
+}
+plot (1:NUM_ITERATIONS, b0, type = 'l', xlab = 'Iteration #i', ylab = 'Beta values', ylim = c(-5, 5), col = 'grey')
+lines(1:NUM_ITERATIONS, b1, col = 'blue')
+lines(1:NUM_ITERATIONS, b2, col = 'green')
+legend('bottom', c('b0', 'b1', 'b2'), lty = 1, col = c('grey', 'blue', 'green'))
+```
+
+### Part F
+
+Compare your answer in (e) to the results of simply performing multiple linear regression to predict Y using X1 and X2. Use the abline() function to overlay those multiple linear regression coefficient estimates on the plot obtained in (e).
+
+```{r}
+NUM_ITERATIONS = 1000
+
+lm.fit = lm(y ~ x1 + x2)
+plot (1:NUM_ITERATIONS, b0, lwd = 5, type = 'l', xlab = 'Iteration #i', ylab = 'Beta values', ylim = c(-5, 5), col = 'grey')
+lines(1:NUM_ITERATIONS, b1, lwd = 5, col = 'cyan')
+lines(1:NUM_ITERATIONS, b2, lwd = 5, col = 'green')
+abline(h = lm.fit$coef[1], lty = 'dotted', lwd = 2, col = rgb(0, 0, 0, alpha = 0.5))
+abline(h = lm.fit$coef[2], lty = 'dotted', lwd = 2, col = rgb(0, 0, 0, alpha = 0.5))
+abline(h = lm.fit$coef[3], lty = 'dotted', lwd = 2, col = rgb(0, 0, 0, alpha = 0.5))
+legend('bottom', c('b0', 'b1', 'b2', 'Multiple regression'), lty = c(1, 1, 1, 2), col = c('grey', 'cyan', 'green', 'dark grey'))
+```
+
+The coefficients from multiple regression match the coefficients from backfitting perfectly.
+
+### Part G
+
+Only really needed to do one iteration.
